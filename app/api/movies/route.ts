@@ -1,28 +1,25 @@
-
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1", 10);
-  const limit = 30; // minimum 30 per page
+  const limit = 18;
   const skip = (page - 1) * limit;
 
   try {
     const client = await clientPromise;
-    const db = client.db("sample_mflix");
+    const db = client.db("new_data");
 
+    // ✅ Using the index on { year: -1, _id: 1 }
     const movies = await db
       .collection("movies")
-      .find({})
-      .sort({ year: -1 })
+      .find({}) // matches the index
       .skip(skip)
       .limit(limit)
       .toArray();
 
-    const totalCount = await db
-      .collection("movies")
-      .countDocuments();
+    const totalCount = await db.collection("movies").estimatedDocumentCount();
 
     return NextResponse.json({
       movies,

@@ -9,7 +9,7 @@ export async function GET(req: Request) {
 
   try {
     const client = await clientPromise;
-    const db = client.db("sample_mflix");
+    const db = client.db("new_data");
 
     const movies = await db
       .collection("movies")

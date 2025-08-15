@@ -12,15 +12,15 @@ export async function GET(req: Request) {
 
   try {
     const client = await clientPromise;
-    const db = client.db("sample_mflix");
+    const db = client.db("new_data");
+
     const movies = await db
       .collection("movies")
       .find({
-        year: { $gt: 1990 },
-        genres: { $in: [new RegExp(`^${genre}$`, "i")] } // case-insensitive match
+        genres: { $regex: genre, $options: "i" } // case-insensitive match, works with arrays
       })
-      .limit(30)
       .sort({ year: -1 })
+      .limit(18)
       .toArray();
 
     return NextResponse.json(movies);
