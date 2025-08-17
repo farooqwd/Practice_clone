@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { StarIcon } from "@heroicons/react/16/solid";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -20,11 +20,17 @@ interface Movie {
 
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 18;
+
+  // Read filters from URL
+  const currentPage = Number(searchParams.get("page")) || 1;
+  const searchQuery = searchParams.get("q") || "";
+  const genreQuery = searchParams.get("genre") || "";
 
   // Fetch posters from our API
   const getPoster = async (imdbId: string) => {
@@ -37,15 +43,26 @@ export default function HomePage() {
     }
   };
 
-  const fetchMovies = async (page = 1) => {
+  const fetchMovies = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/movies?page=${page}&limit=${pageSize}`);
+      let url = "";
+
+      if (searchQuery) {
+        url = `/api/search?q=${encodeURIComponent(searchQuery)}&page=${currentPage}&limit=${pageSize}`;
+      } else if (genreQuery) {
+        url = `/api/genre?name=${encodeURIComponent(genreQuery)}&page=${currentPage}&limit=${pageSize}`;
+      } else {
+        url = `/api/movies?page=${currentPage}&limit=${pageSize}`;
+      }
+
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch movies");
       const data = await res.json();
 
+      const moviesArray = Array.isArray(data.movies) ? data.movies : data;
       const moviesWithPosters = await Promise.all(
-        (Array.isArray(data.movies) ? data.movies : []).map(async (movie: Movie) => {
+        (moviesArray || []).map(async (movie: Movie) => {
           const poster = await getPoster(movie.id);
           return { ...movie, poster };
         })
@@ -60,65 +77,35 @@ export default function HomePage() {
     }
   };
 
-  const searchMovies = async (term: string) => {
-    if (!term.trim()) {
-      fetchMovies(1);
-      setCurrentPage(1);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`);
-      if (!res.ok) throw new Error("Failed to search movies");
-      const data = await res.json();
+  // 🔑 Fetch movies whenever URL params change
+  useEffect(() => {
+    fetchMovies();
+  }, [currentPage, searchQuery, genreQuery]);
 
-      const moviesWithPosters = await Promise.all(
-        (Array.isArray(data) ? data : []).map(async (movie: Movie) => {
-          const poster = await getPoster(movie.id);
-          return { ...movie, poster };
-        })
-      );
-
-      setMovies(moviesWithPosters);
-      setTotalPages(1);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+  // Handlers update the URL
+  const handleSearch = (term: string) => {
+    const params = new URLSearchParams();
+    if (term.trim()) params.set("q", term.trim());
+    params.set("page", "1"); // reset page on new search
+    router.push(`/?${params.toString()}`);
   };
 
-  const fetchByGenre = async (genre: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/genre?name=${encodeURIComponent(genre)}`);
-      if (!res.ok) throw new Error("Failed to fetch movies by genre");
-      const data = await res.json();
-
-      const moviesWithPosters = await Promise.all(
-        (Array.isArray(data) ? data : []).map(async (movie: Movie) => {
-          const poster = await getPoster(movie.id);
-          return { ...movie, poster };
-        })
-      );
-
-      setMovies(moviesWithPosters);
-      setTotalPages(1);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+  const handleGenre = (genre: string) => {
+    const params = new URLSearchParams();
+    if (genre.trim()) params.set("genre", genre.trim());
+    params.set("page", "1"); // reset page
+    router.push(`/?${params.toString()}`);
   };
 
   const resetMovies = () => {
-    setCurrentPage(1);
-    fetchMovies(1);
+    router.push("/?page=1");
   };
 
-  useEffect(() => {
-    fetchMovies(currentPage);
-  }, [currentPage]);
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", page.toString());
+    router.push(`/?${params.toString()}`, { scroll: false });
+  };
 
   const handleMovieClick = (imdbId: string) => {
     router.push(`/watch/${imdbId}`);
@@ -126,7 +113,7 @@ export default function HomePage() {
 
   return (
     <div className="bg-[#141414] text-white min-h-screen flex flex-col">
-      <Header onSearch={searchMovies} onGenreSelect={fetchByGenre} onReset={resetMovies} />
+      <Header onSearch={handleSearch} onGenreSelect={handleGenre} onReset={resetMovies} />
 
       <main className="flex-grow p-8">
         {loading ? (
@@ -161,7 +148,7 @@ export default function HomePage() {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={setCurrentPage}
+              onPageChange={handlePageChange}
             />
           </>
         )}
