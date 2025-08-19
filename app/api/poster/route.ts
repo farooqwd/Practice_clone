@@ -9,18 +9,27 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Missing IMDb ID" }, { status: 400 });
     }
 
-    const response = await fetch(`https://www.imdb.com/title/${imdbId}/`, {
+    // IMDb suggestion API (no API key required)
+    const firstLetter = imdbId[2].toLowerCase(); // imdbId like "tt1234567"
+    const apiUrl = `https://sg.media-imdb.com/suggests/${firstLetter}/${imdbId}.json`;
+
+    const response = await fetch(apiUrl, {
       headers: { "User-Agent": "Mozilla/5.0" },
     });
+    const text = await response.text();
 
-    const html = await response.text();
-    const match = html.match(/<meta property="og:image" content="(.*?)"/);
+    // IMDb JSONP → strip callback
+    const json = JSON.parse(text.replace(/^[^{]+/, "").replace(/\);?$/, ""));
+    const posterRaw = json.d?.[0]?.i?.[0] || json.d?.[0]?.i?.imageUrl;
 
-    if (!match) {
+    if (!posterRaw) {
       return NextResponse.json({ error: "Poster not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ poster: match[1] });
+    // Use small/faster version (width 150px)
+    const poster = posterRaw.replace(/_V1_.*\.jpg$/, "_V1_UX150_.jpg");
+
+    return NextResponse.json({ poster });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to fetch poster" }, { status: 500 });
