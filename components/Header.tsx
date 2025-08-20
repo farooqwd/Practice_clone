@@ -48,7 +48,7 @@ export default function Header({ onSearch, onGenreSelect, onReset }: HeaderProps
           />
           <button
             onClick={() => onSearch(searchTerm)} // from Header.tsx
-            className="ml-2 px-4 py-2 bg-red-600 rounded-full hover:bg-red-700 transition"
+            className="ml-2 px-4 py-2 bg-red-600 rounded-full hover:bg-red-700 cursor-pointer transition"
           >
             Search
           </button>

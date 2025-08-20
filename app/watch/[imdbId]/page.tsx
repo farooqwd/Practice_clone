@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation"; 
 
 export default function WatchPage() {
   const params = useParams<{ imdbId: string }>();
   const imdbId = params?.imdbId;
+  const router = useRouter();
 
   const [providers, setProviders] = useState<{ name: string; url: string }[]>([]);
   const [activeUrl, setActiveUrl] = useState<string>("");
@@ -147,13 +148,14 @@ export default function WatchPage() {
                     <h3 className="text-sm font-semibold text-gray-400">Cast</h3>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {movieData.cast.map((actor, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-1 bg-[#2a2a2a] rounded text-xs hover:bg-[#00a3ff] hover:text-white transition cursor-pointer"
-                        >
-                          {actor}
-                        </span>
-                      ))}
+  <span
+    key={i}
+    onClick={() => router.push(`/?actor=${encodeURIComponent(actor)}&page=1`)}
+    className="px-2 py-1 bg-[#2a2a2a] rounded text-xs hover:bg-[#00a3ff] hover:text-white transition cursor-pointer"
+  >
+    {actor}
+  </span>
+))}
                     </div>
                   </div>
                 </div>

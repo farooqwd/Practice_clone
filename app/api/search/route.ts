@@ -18,7 +18,7 @@ export async function GET(req: Request) {
         title: { $regex: query, $options: "i" }, // case-insensitive search
       })
       .sort({ year: -1 }) // newest first
-      .limit(100)
+      .limit(200)
       .toArray();
 
     return NextResponse.json(movies);

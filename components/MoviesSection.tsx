@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { StarIcon } from "@heroicons/react/16/solid";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -21,6 +22,7 @@ interface Movie {
 export default function HomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,7 @@ export default function HomePage() {
   const currentPage = Number(searchParams.get("page")) || 1;
   const searchQuery = searchParams.get("q") || "";
   const genreQuery = searchParams.get("genre") || "";
+  const actorQuery = searchParams.get("actor") || "";
 
   // Fetch posters from our API
   const getPoster = async (imdbId: string) => {
@@ -52,6 +55,8 @@ export default function HomePage() {
         url = `/api/search?q=${encodeURIComponent(searchQuery)}&page=${currentPage}&limit=${pageSize}`;
       } else if (genreQuery) {
         url = `/api/genre?name=${encodeURIComponent(genreQuery)}&page=${currentPage}&limit=${pageSize}`;
+      } else if (actorQuery) {
+        url = `/api/actor?name=${encodeURIComponent(actorQuery)}&page=${currentPage}&limit=${pageSize}`;
       } else {
         url = `/api/movies?page=${currentPage}&limit=${pageSize}`;
       }
@@ -77,23 +82,30 @@ export default function HomePage() {
     }
   };
 
-  // 🔑 Fetch movies whenever URL params change
+  // Only fetch on the homepage route, and react to all relevant params
   useEffect(() => {
+    if (pathname !== "/") return;
     fetchMovies();
-  }, [currentPage, searchQuery, genreQuery]);
+  }, [pathname, currentPage, searchQuery, genreQuery, actorQuery]);
 
-  // Handlers update the URL
+  // Handlers update the URL (clear conflicting params)
   const handleSearch = (term: string) => {
     const params = new URLSearchParams();
     if (term.trim()) params.set("q", term.trim());
-    params.set("page", "1"); // reset page on new search
+    params.set("page", "1");
+    // clear others
+    params.delete("genre");
+    params.delete("actor");
     router.push(`/?${params.toString()}`);
   };
 
   const handleGenre = (genre: string) => {
     const params = new URLSearchParams();
     if (genre.trim()) params.set("genre", genre.trim());
-    params.set("page", "1"); // reset page
+    params.set("page", "1");
+    // clear others
+    params.delete("q");
+    params.delete("actor");
     router.push(`/?${params.toString()}`);
   };
 
@@ -107,10 +119,6 @@ export default function HomePage() {
     router.push(`/?${params.toString()}`, { scroll: false });
   };
 
-  const handleMovieClick = (imdbId: string) => {
-    router.push(`/watch/${imdbId}`);
-  };
-
   return (
     <div className="bg-[#141414] text-white min-h-screen flex flex-col">
       <Header onSearch={handleSearch} onGenreSelect={handleGenre} onReset={resetMovies} />
@@ -122,9 +130,10 @@ export default function HomePage() {
           <>
             <div className="grid grid-cols-6 gap-4">
               {movies.map((movie) => (
-                <div
+                <Link
                   key={movie._id}
-                  onClick={() => handleMovieClick(movie.id)}
+                  href={`/watch/${movie.id}`}
+                  prefetch={false}
                   className="cursor-pointer bg-gray-800 rounded overflow-hidden transform transition duration-300 hover:scale-105"
                 >
                   <div className="relative">
@@ -141,7 +150,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="p-2 text-sm">{movie.title}</div>
-                </div>
+                </Link>
               ))}
             </div>
 
