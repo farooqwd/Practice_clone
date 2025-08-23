@@ -141,7 +141,12 @@ export default function WatchPage() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-400">Director</h3>
-                    <p>{movieData.director}</p>
+                    <span
+    onClick={() => router.push(`/?director=${encodeURIComponent(movieData.director)}&page=1`)}
+    className="px-2 py-1 bg-[#2a2a2a] rounded text-xs hover:bg-[#00a3ff] hover:text-white transition cursor-pointer"
+  >
+    {movieData.director}
+  </span>
                   </div>
 
                   <div>
