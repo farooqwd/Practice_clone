@@ -13,13 +13,17 @@ export async function GET(req: Request) {
 
     // ✅ Using the index on { year: -1, _id: 1 }
     const movies = await db
-      .collection("movies")
-      .find({}) // matches the index
-      .skip(skip)
-      .limit(limit)
-      .toArray();
-
-    const totalCount = await db.collection("movies").estimatedDocumentCount();
+  .collection("movies")
+  .find({ year: { $gt: 2024 } })
+  .sort({ year: -1 })   // descending (latest first)
+  .skip(skip)
+  .limit(limit)
+  .toArray();
+    const totalCount = await db.collection("movies").countDocuments({
+      year:{
+        $gt:2024
+      }
+    });
 
     return NextResponse.json({
       movies,
