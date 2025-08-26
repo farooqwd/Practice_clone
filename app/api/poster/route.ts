@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     }
 
     // Use small/faster version (width 150px)
-    const poster = posterRaw.replace(/_V1_.*\.jpg$/, "_V1_UX150_.jpg");
+    const poster = posterRaw.replace(/_V1_.*\.jpg$/, "_V1_UX300_.jpg");
 
     return NextResponse.json({ poster });
   } catch (error) {

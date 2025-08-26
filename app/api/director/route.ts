@@ -22,7 +22,7 @@ export async function GET(req: Request) {
 
     const totalCount = await collection.countDocuments(query);
     const movies = await collection
-      .find(query)
+      .find({directors: { $regex: director, $options: "i" } })
       .skip(skip)
       .limit(limit)
       .toArray();

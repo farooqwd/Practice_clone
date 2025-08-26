@@ -17,6 +17,7 @@ interface Movie {
   rating?: number;
   genres?: string[];
   poster?: string;
+  year?: number;
 }
 
 export default function HomePage() {
@@ -149,7 +150,8 @@ export default function HomePage() {
                       </span>
                     </div>
                   </div>
-                  <div className="p-2 text-sm">{movie.title}</div>
+                  <div className="p-1 text-sm">{movie.title}</div>
+                  <div className="p-1 text-sm">{movie.year}</div>
                 </Link>
               ))}
             </div>
